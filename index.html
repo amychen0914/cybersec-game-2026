@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="zh-Hant" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>辦公生存戰 - CYBERSEC 2026</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&amp;family=Orbitron:wght@400;700;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <style>
+  html, body { height: 100%; margin: 0; padding: 0; }
+
+  @keyframes glitch {
+    0%, 100% { text-shadow: 2px 0 #0ff, -2px 0 #f0f; }
+    25% { text-shadow: -2px -1px #0ff, 2px 1px #f0f; }
+    50% { text-shadow: 1px 2px #0ff, -1px -2px #f0f; }
+    75% { text-shadow: -1px 1px #0ff, 1px -1px #f0f; }
+  }
+
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px var(--accent), 0 0 10px var(--accent); }
+    50% { box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent), 0 0 45px var(--accent); }
+  }
+
+  @keyframes float-in {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  @keyframes border-reveal {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+  }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(60px) rotate(720deg); opacity: 0; }
+  }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #131829;
+    --text: #e0e6f0;
+    --accent: #00f0ff;
+    --accent2: #ff2d6b;
+  }
+
+  .glitch-text { animation: glitch 3s infinite; }
+  .scanline-overlay {
+    pointer-events: none;
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,240,255,0.015) 2px, rgba(0,240,255,0.015) 4px);
+  }
+
+  .hotspot {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .hotspot:hover { transform: scale(1.03); }
+  .hotspot:active { transform: scale(0.97); }
+  .hotspot.found {
+    outline: 3px solid #ff2d6b;
+    outline-offset: 3px;
+    animation: shake 0.4s ease;
+  }
+  .hotspot.found::after {
+    content: '⚠';
+    position: absolute; top: -10px; right: -10px;
+    background: #ff2d6b; color: white;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; z-index: 10;
+  }
+
+  .modal-overlay {
+    animation: float-in 0.35s ease;
+  }
+
+  .progress-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #2a3050; border: 2px solid #3a4570;
+    transition: all 0.4s ease;
+  }
+  .progress-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .cyber-border {
+    border: 1px solid rgba(0,240,255,0.2);
+    position: relative;
+  }
+  .cyber-border::before {
+    content: ''; position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border: 1px solid var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .cyber-border:hover::before { opacity: 0.5; }
+
+  .email-row { border-left: 3px solid transparent; transition: all 0.2s; }
+  .email-row:hover { border-left-color: var(--accent); background: rgba(0,240,255,0.03); }
+
+  .scene-enter { animation: float-in 0.6s ease; }
+
+  /* Subtle hint pulse for hotspots not yet found */
+  .hotspot:not(.found) {
+    animation: hint-pulse 3s infinite ease-in-out;
+  }
+  @keyframes hint-pulse {
+    0%, 70%, 100% { box-shadow: none; }
+    35% { box-shadow: 0 0 8px rgba(0,240,255,0.25); }
+  }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full" style="background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; overflow: auto;">
+  <div id="app" class="h-full w-full flex flex-col" style="background: linear-gradient(170deg, #0a0e1a 0%, #0f1528 40%, #141e35 100%);"><!-- NAV BAR -->
+   <nav id="navbar" class="w-full flex items-center justify-between px-4 py-3 md:px-8" style="background: rgba(19,24,41,0.95); border-bottom: 1px solid rgba(0,240,255,0.15); backdrop-filter: blur(10px); flex-shrink: 0;">
+    <div class="flex items-center gap-2"><i data-lucide="shield-check" style="color: var(--accent); width: 22px; height: 22px;"></i> <span id="nav-title" class="text-sm md:text-base font-bold" style="font-family: 'Orbitron', sans-serif; color: var(--accent); letter-spacing: 1px;">CYBERSEC 2026</span>
+    </div>
+    <div class="flex items-center gap-3 md:gap-6"><span id="level-indicator" class="text-xs md:text-sm font-medium" style="color: #8892b0;">進度：第 1 關</span>
+     <div class="flex items-center gap-2"><i data-lucide="search" style="color: var(--accent2); width: 16px; height: 16px;"></i> <span id="found-indicator" class="text-xs md:text-sm font-mono font-bold" style="color: var(--accent2);">0/3</span>
+     </div>
+     <div class="flex items-center gap-1" id="progress-dots">
+      <div class="progress-dot" id="dot-0"></div>
+      <div class="progress-dot" id="dot-1"></div>
+      <div class="progress-dot" id="dot-2"></div>
+     </div>
+    </div>
+   </nav><!-- MAIN CONTENT AREA -->
+   <div class="flex-1 overflow-auto flex flex-col"><!-- START SCREEN -->
+    <div id="screen-start" class="flex-1 flex flex-col items-center justify-center px-4 py-8">
+     <div class="text-center max-w-lg mx-auto scene-enter">
+      <div class="mb-6">
+       <div style="font-family: 'Orbitron', sans-serif; font-size: clamp(1rem, 3vw, 1.2rem); color: var(--accent); letter-spacing: 3px; margin-bottom: 8px;" id="start-booth-msg">
+        2026 CYBERSEC 資安大會
+       </div>
+       <h1 id="start-title" class="glitch-text" style="font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 7vw, 3.5rem); font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 16px;">辦公生存戰</h1>
+       <p class="text-base md:text-lg" style="color: #8892b0; max-width: 400px; margin: 0 auto;">你能在辦公室的陷阱中全身而退嗎？<br>
+         找出所有資安漏洞，守護你的數位安全！</p>
+      </div>
+      <div class="flex flex-col items-center gap-3 mt-8">
+       <div class="flex items-center gap-4 text-sm" style="color: #5a6080;"><span class="flex items-center gap-1"><i data-lucide="layers" style="width:16px;height:16px;"></i> 2 關</span> <span class="flex items-center gap-1"><i data-lucide="target" style="width:16px;height:16px;"></i> 6 個陷阱</span> <span class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px;"></i> ~3 分鐘</span>
+       </div><button id="btn-start" onclick="startGame()" class="mt-4 px-10 py-4 rounded-lg font-bold text-base md:text-lg" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'"> <span class="flex items-center gap-2"> <i data-lucide="play" style="width:20px;height:20px;"></i> 開始挑戰 </span> </button>
+      </div>
+     </div>
+    </div><!-- LEVEL 1: COFFEE SHOP -->
+    <div id="screen-level1" class="flex-1 flex-col items-center px-3 py-4 md:px-6 md:py-6" style="display:none;">
+     <div class="text-center mb-4 scene-enter">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold" style="background: rgba(0,240,255,0.1); border: 1px solid rgba(0,240,255,0.3); color: var(--accent); font-family: 'Orbitron', sans-serif;"><i data-lucide="coffee" style="width:14px;height:14px;"></i> 第一關：咖啡廳隱形危機
+      </div>
+      <p class="mt-3 text-sm mb-3" style="color: #8892b0; line-height: 1.6;">你正在家附近的咖啡廳享受遠端辦公的愜意，做好開工準備後，你起身走向櫃檯點餐。<br><span style="font-size: 0.9rem; color: #6a7090;">在這平靜的60秒內，你的設備正向駭客招手！</span></p>
+      <p class="text-xs" style="color: #6a7090;">點擊畫面中的資安漏洞！</p>
+     </div><!-- Coffee Shop Scene -->
+     <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden cyber-border scene-enter" style="background: var(--surface); position: relative;">
+      <div class="scanline-overlay rounded-xl"></div><!-- Scene Illustration -->
+      <div class="relative p-4 md:p-6" style="background: linear-gradient(180deg, #1a1f35 0%, #131829 100%); min-height: 340px;"><!-- Cafe background elements -->
+       <div class="absolute top-3 left-4 text-xs" style="color: #3a4060; font-family: 'JetBrains Mono', monospace;">
+        ☕ Café de Code
+       </div><!-- WiFi indicator - HOTSPOT -->
+       <div id="hs-wifi" class="hotspot absolute top-2 right-3 md:right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style="background: rgba(0,200,100,0.1); border: 1px solid rgba(0,200,100,0.3);" onclick="handleHotspot('wifi')"><i data-lucide="wifi" style="width:16px;height:16px;color:#00c864;"></i> <span class="text-xs font-mono font-bold" style="color: #00c864;">Free_Coffee_WiFi</span> <span class="text-xs" style="color: #4a5a40;">已連線</span>
+       </div><!-- Laptop -->
+       <div class="mx-auto mt-10 md:mt-8" style="max-width: 420px;"><!-- Laptop Screen - HOTSPOT -->
+        <div id="hs-screen" class="hotspot rounded-t-lg p-3 md:p-4" style="background: #1e2540; border: 2px solid #2a3255; border-bottom: none;" onclick="handleHotspot('screen')">
+         <div class="rounded" style="background: #0d1220; padding: 12px; min-height: 140px;">
+          <div class="flex items-center gap-2 mb-2" style="border-bottom: 1px solid #1a2040; padding-bottom: 6px;">
+           <div class="flex gap-1">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ff5f57;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#febc2e;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#28c840;"></div>
+           </div><span class="text-xs" style="color:#3a4570;font-family:'JetBrains Mono',monospace;">客戶資料庫.xlsx</span>
+          </div>
+          <div class="space-y-1.5">
+           <div class="flex gap-2 text-xs" style="color:#8892b0;">
+            <span>客戶名單 - Q4 合約簽署</span>
+           </div>
+           <div class="rounded px-2 py-1" style="background:#111830;">
+            <div class="text-xs font-mono" style="color:#7a8ab0;">
+             王大明 | 0912-885-5566 | NT$2,500,000<br>
+              李小華 | 0933-662-3344 | NT$1,800,000<br>
+              張美玲 | 0955-774-9988 | NT$3,200,000
+            </div>
+           </div>
+          </div>
+         </div>
+        </div><!-- Laptop Base -->
+        <div class="rounded-b-lg" style="background: linear-gradient(180deg, #2a3050, #222840); height: 14px; border: 2px solid #2a3255; border-top: none;">
+         <div class="mx-auto rounded-full" style="width: 40px; height: 4px; background: #3a4060; margin-top: 4px;"></div>
+        </div><!-- Sticky Note - HOTSPOT -->
+        <div id="hs-note" class="hotspot absolute" style="bottom: 65px; right: 12%; md:right: 15%; transform: rotate(-8deg);" onclick="handleHotspot('note')">
+         <div class="rounded-sm px-3 py-2 shadow-lg" style="background: linear-gradient(135deg, #fde68a, #fbbf24); min-width: 95px;">
+          <div class="text-xs font-bold" style="color: #92400e;">
+           📝 HQ 系統<br><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 2px; text-decoration: underline;">Pw: //////</span>
+          </div>
+         </div>
+        </div>
+       </div><!-- Decorative stationery scattered -->
+       <div id="hs-stationery" class="hotspot absolute bottom-3 left-3 md:left-6 text-base opacity-70 cursor-pointer hover:opacity-100 transition-opacity" onclick="handleHotspot('stationery')">
+        ✏️ 🖊️
+       </div>
+       <div class="absolute bottom-4 right-6 text-base opacity-60">
+        📎
+       </div>
+      </div>
+     </div>
+    </div><!-- TRANSITION SCREEN -->
+    <div id="screen-transition" class="flex-1 flex-col items-center justify-center px-4 py-8" style="display:none;">
+     <div class="text-center max-w-md mx-auto scene-enter">
+      <div class="text-5xl mb-6">
+       📧
+      </div>
+      <h2 class="text-xl md:text-2xl font-bold mb-4" style="color: #fff; font-family: 'Orbitron', sans-serif;">你以為回座位就沒事了嗎？</h2>
+      <p class="text-base md:text-lg mb-8" style="color: var(--accent2);">看看你的收件匣...</p>
+      <div class="flex justify-center gap-1">
+       <div class="w-2 h-2 rounded-full" style="background: var(--accent); animation: pulse-glow 1.5s infinite;"></div>
+       <div class="w-2 h-2 rounded-full" style="background: var(--accent); animation: pulse-glow 1.5s 0.3s infinite;"></div>
+       <div class="w-2 h-2 rounded-full" style="background: var(--accent); animation: pulse-glow 1.5s 0.6s infinite;"></div>
+      </div>
+     </div>
+    </div><!-- LEVEL 2: PHISHING EMAIL -->
+    <div id="screen-level2" class="flex-1 flex-col items-center px-3 py-4 md:px-6 md:py-6" style="display:none;">
+     <div class="text-center mb-4 scene-enter">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold" style="background: rgba(255,45,107,0.1); border: 1px solid rgba(255,45,107,0.3); color: var(--accent2); font-family: 'Orbitron', sans-serif;"><i data-lucide="mail-warning" style="width:14px;height:14px;"></i> 第二關：致命的信件
+      </div>
+      <p class="mt-2 text-sm" style="color: #6a7090;">找出這封釣魚郵件的可疑之處！</p>
+     </div><!-- Email Client Mock -->
+     <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden cyber-border scene-enter" style="background: var(--surface); position: relative;">
+      <div class="scanline-overlay rounded-xl"></div><!-- Email Toolbar -->
+      <div class="flex items-center gap-3 px-4 py-2.5" style="background: #1a1f35; border-bottom: 1px solid #2a3050;">
+       <div class="flex items-center gap-2"><i data-lucide="inbox" style="width:16px;height:16px;color:#5a6590;"></i> <span class="text-sm font-bold" style="color: #8892b0;">收件匣</span>
+       </div>
+       <div class="ml-auto flex items-center gap-2"><span class="px-2 py-0.5 rounded text-xs font-bold" style="background: rgba(255,45,107,0.15); color: var(--accent2);">1 封未讀</span>
+       </div>
+      </div><!-- Email Content -->
+      <div class="p-4 md:p-5"><!-- Sender - HOTSPOT -->
+       <div id="hs-sender" class="hotspot rounded-lg p-3 mb-3" style="background: #111830;" onclick="handleHotspot('sender')">
+        <div class="flex items-center gap-3">
+         <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #1a4a8a, #2563eb);"><i data-lucide="user" style="width:20px;height:20px;color:#fff;"></i>
+         </div>
+         <div class="flex-1 min-w-0">
+          <div class="text-sm font-bold" style="color: #c0c8e0;">
+           IT_Support
+          </div>
+          <div class="text-xs font-mono truncate" style="color: #5a6a90;">
+           &lt;security@micros0ft-update.net&gt;
+          </div>
+         </div>
+         <div class="text-xs" style="color: #4a5570;">
+          今天 09:14
+         </div>
+        </div>
+       </div><!-- Subject - HOTSPOT -->
+       <div id="hs-subject" class="hotspot rounded-lg p-3 mb-3" style="background: #111830;" onclick="handleHotspot('subject')">
+        <div class="flex items-center gap-2"><span class="px-2 py-0.5 rounded text-xs font-bold flex-shrink-0" style="background: rgba(255,80,80,0.2); color: #ff5050;">🚨 緊急</span> <span class="text-sm font-bold" style="color: #e0e6f0;">【緊急】帳號即將在 10 分鐘內永久刪除</span>
+        </div>
+       </div><!-- Email Body -->
+       <div class="rounded-lg p-4 mb-3" style="background: #111830; border-left: 3px solid #2a3050;">
+        <p class="text-sm mb-3" style="color: #8892b0; line-height: 1.7;">親愛的使用者，<br><br>
+          我們偵測到您的帳號存在<span style="color:#ff5050;font-weight:bold;">嚴重的安全威脅</span>。如果您不在 <span style="color:#ff5050;font-weight:bold;">10 分鐘內</span>完成驗證，您的帳號將被<span style="color:#ff5050;font-weight:bold;">永久刪除</span>，且所有資料將無法恢復。<br><br>
+          請立即下載並執行以下安全修補程式：</p><!-- Attachment - HOTSPOT -->
+        <div id="hs-attachment" class="hotspot rounded-lg p-3 flex items-center gap-3" style="background: #0d1220; border: 1px dashed #2a3555;" onclick="handleHotspot('attachment')">
+         <div class="flex-shrink-0 w-10 h-10 rounded flex items-center justify-center" style="background: rgba(255,45,107,0.1);"><i data-lucide="file-down" style="width:20px;height:20px;color:var(--accent2);"></i>
+         </div>
+         <div>
+          <div class="text-sm font-mono font-bold" style="color: #c0c8e0;">
+           System_Update_Patch.exe
+          </div>
+          <div class="text-xs" style="color: #5a6a90;">
+           2.4 MB · 可執行檔
+          </div>
+         </div>
+         <div class="ml-auto"><i data-lucide="download" style="width:18px;height:18px;color:#5a6a90;"></i>
+         </div>
+        </div>
+       </div>
+       <div class="text-xs" style="color: #3a4570;">
+        此郵件由 Microsoft Security Team 自動發送，請勿回覆。
+       </div>
+      </div>
+     </div>
+    </div><!-- RESULT SCREEN -->
+    <div id="screen-result" class="flex-1 flex-col items-center justify-center px-4 py-8" style="display:none;">
+     <div id="result-content" class="text-center max-w-md mx-auto scene-enter"><!-- Filled by JS -->
+     </div>
+    </div>
+   </div><!-- FEEDBACK MODAL -->
+   <div id="modal-overlay" class="fixed inset-0 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 50;">
+    <div id="modal-box" class="modal-overlay w-full max-w-sm rounded-xl p-5 md:p-6" style="background: var(--surface); border: 1px solid rgba(255,45,107,0.3);">
+     <div class="flex items-start gap-3 mb-4">
+      <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style="background: rgba(255,45,107,0.15);"><i data-lucide="alert-triangle" style="width:22px;height:22px;color:var(--accent2);"></i>
+      </div>
+      <div>
+       <h3 id="modal-title" class="text-base font-bold mb-1" style="color: var(--accent2);"></h3>
+       <p id="modal-body" class="text-sm" style="color: #8892b0; line-height: 1.6;"></p>
+      </div>
+     </div><button id="modal-close-btn" onclick="closeModal()" class="w-full py-2.5 rounded-lg text-sm font-bold" style="background: rgba(0,240,255,0.1); border: 1px solid rgba(0,240,255,0.3); color: var(--accent); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,240,255,0.2)'" onmouseout="this.style.background='rgba(0,240,255,0.1)'"> 了解！繼續找 → </button>
+    </div>
+   </div>
+  </div>
+  <script>
+// Game State
+const state = {
+  currentLevel: 0,
+  level1Found: { screen: false, note: false, wifi: false },
+  level2Found: { sender: false, subject: false, attachment: false },
+  totalScore: 0,
+  timeLeft: 60,        // 新增：設定總時間 60 秒
+  timerInterval: null  // 新增：用來存放計時器的變數
+};
+
+const feedbackData = {
+  screen: {
+    title: '中招了！',
+    body: '離開座位不鎖螢幕（Win+L），路人甲 3 秒就能拷貝你的客戶資料。養成離席鎖屏的好習慣，這是基本的物理安全防護！'
+  },
+  note: {
+    title: '抓到了！',
+    body: '實體密碼條是駭客最愛的「大禮包」，稱為實體社交工程攻擊。請使用密碼管理器（如 KeePass、1Password）來安全儲存密碼。'
+  },
+  stationery: {
+    title: '這裡沒問題喔',
+    body: '文具很安全，再找找別的地方吧 🔍'
+  },
+  wifi: {
+    title: '中間人攻擊風險！',
+    body: '未加密的公共 Wi-Fi 容易被側錄封包，你的帳號密碼可能正在被監聽。請務必開啟 VPN！'
+  },
+  sender: {
+    title: '好眼力！',
+    body: '注意到了嗎？micros"0"ft 用了數字 0 替代字母 o！官方網域拼寫錯誤是釣魚信最常見的馬腳。'
+  },
+  subject: {
+    title: '別被騙了！',
+    body: '創造迫切感是社交工程的經典套路。遇到「緊急」「立刻」「馬上」等字眼，請先深呼吸、冷靜查證。'
+  },
+  attachment: {
+    title: '絕對不要點！',
+    body: '系統更新不會透過電子郵件發送 .exe 執行檔。這種附件很可能是勒索軟體或木馬程式。'
+  }
+};
+
+// Element SDK Config
+const defaultConfig = {
+  background_color: '#0a0e1a',
+  surface_color: '#131829',
+  text_color: '#e0e6f0',
+  accent_color: '#00f0ff',
+  accent2_color: '#ff2d6b',
+  font_family: 'Noto Sans TC',
+  font_size: 16,
+  game_title: '辦公生存戰',
+  booth_message: '2026 CYBERSEC 資安大會',
+  prize_full: '請向工作人員出示此畫面領取【抽獎資格】',
+  prize_partial: '請向工作人員領取【參加獎】'
+};
+
+function applyConfig(config) {
+  const bg = config.background_color || defaultConfig.background_color;
+  const surface = config.surface_color || defaultConfig.surface_color;
+  const text = config.text_color || defaultConfig.text_color;
+  const accent = config.accent_color || defaultConfig.accent_color;
+  const accent2 = config.accent2_color || defaultConfig.accent2_color;
+  const fontFamily = config.font_family || defaultConfig.font_family;
+  const fontSize = config.font_size || defaultConfig.font_size;
+
+  document.documentElement.style.setProperty('--bg', bg);
+  document.documentElement.style.setProperty('--surface', surface);
+  document.documentElement.style.setProperty('--text', text);
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent2', accent2);
+
+  document.body.style.color = text;
+  document.body.style.fontFamily = `${fontFamily}, 'Noto Sans TC', sans-serif`;
+
+  const app = document.getElementById('app');
+  if (app) app.style.background = `linear-gradient(170deg, ${bg} 0%, ${lighten(bg, 5)} 40%, ${lighten(bg, 10)} 100%)`;
+
+  // Text content
+  const title = config.game_title || defaultConfig.game_title;
+  const booth = config.booth_message || defaultConfig.booth_message;
+  const startTitle = document.getElementById('start-title');
+  if (startTitle) startTitle.textContent = title;
+  const boothEl = document.getElementById('start-booth-msg');
+  if (boothEl) boothEl.textContent = booth;
+  const navTitle = document.getElementById('nav-title');
+  if (navTitle) navTitle.textContent = booth;
+
+  // Font sizing
+  const baseSize = fontSize;
+  document.querySelectorAll('p, span:not([style*="font-family: Orbitron"]):not(.text-xs):not(.text-sm)').forEach(el => {
+    if (!el.closest('#modal-box') && !el.closest('#result-content')) return;
+  });
+}
+
+function lighten(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, (num >> 16) + percent);
+  const g = Math.min(255, ((num >> 8) & 0x00FF) + percent);
+  const b = Math.min(255, (num & 0x0000FF) + percent);
+  return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+}
+
+// SDK Init
+if (window.elementSdk) {
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (config) => { applyConfig(config); },
+    mapToCapabilities: (config) => ({
+      recolorables: [
+        { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+        { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+        { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+        { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+        { get: () => config.accent2_color || defaultConfig.accent2_color, set: (v) => { config.accent2_color = v; window.elementSdk.setConfig({ accent2_color: v }); } }
+      ],
+      borderables: [],
+      fontEditable: {
+        get: () => config.font_family || defaultConfig.font_family,
+        set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+      },
+      fontSizeable: {
+        get: () => config.font_size || defaultConfig.font_size,
+        set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+      }
+    }),
+    mapToEditPanelValues: (config) => new Map([
+      ['game_title', config.game_title || defaultConfig.game_title],
+      ['booth_message', config.booth_message || defaultConfig.booth_message],
+      ['prize_full', config.prize_full || defaultConfig.prize_full],
+      ['prize_partial', config.prize_partial || defaultConfig.prize_partial]
+    ])
+  });
+}
+
+// Game Functions
+function showScreen(id) {
+  ['screen-start', 'screen-level1', 'screen-transition', 'screen-level2', 'screen-result'].forEach(s => {
+    const el = document.getElementById(s);
+    el.style.display = 'none';
+  });
+  const target = document.getElementById(id);
+  target.style.display = 'flex';
+}
+
+function updateNav() {
+  const levelText = document.getElementById('level-indicator');
+  const foundText = document.getElementById('found-indicator');
+  const dots = document.getElementById('progress-dots');
+
+  if (state.currentLevel === 1) {
+    levelText.textContent = '進度：第 1 關';
+    const count = Object.values(state.level1Found).filter(Boolean).length;
+    foundText.textContent = `${count}/3`;
+    dots.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.className = `progress-dot${i < count ? ' active' : ''}`;
+      dots.appendChild(dot);
+    }
+  } else if (state.currentLevel === 2) {
+    levelText.textContent = '進度：第 2 關';
+    const count = Object.values(state.level2Found).filter(Boolean).length;
+    foundText.textContent = `${count}/3`;
+    dots.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.className = `progress-dot${i < count ? ' active' : ''}`;
+      dots.appendChild(dot);
+    }
+  }
+}
+
+function startGame() {
+  state.currentLevel = 1;
+  state.level1Found = { screen: false, note: false, wifi: false };
+  state.level2Found = { sender: false, subject: false, attachment: false };
+  state.totalScore = 0;
+  state.timeLeft = 60; // 每次重新開始都回到 60 秒
+
+  // 防止重複啟動計時器
+  if (state.timerInterval) clearInterval(state.timerInterval);
+
+  // 啟動倒數計時
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    
+    // 把剩餘時間顯示在原本的「進度」欄位
+    const levelText = document.getElementById('level-indicator');
+    if (levelText) {
+      levelText.innerHTML = `剩餘時間：<span style="color:var(--accent2); font-family:Orbitron;">${state.timeLeft}s</span>`;
+    }
+
+    // 時間到就結束遊戲
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      showResult(); 
+    }
+  }, 1000);
+
+  // 重置所有陷阱的樣式
+  ['hs-screen', 'hs-note', 'hs-wifi', 'hs-sender', 'hs-subject', 'hs-attachment'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('found');
+  });
+
+  showScreen('screen-level1');
+  updateNav();
+  lucide.createIcons();
+}
+
+function handleHotspot(key) {
+  // Check if already found
+  if (state.currentLevel === 1 && state.level1Found[key]) return;
+  if (state.currentLevel === 2 && state.level2Found[key]) return;
+
+  // Mark found
+  if (state.currentLevel === 1) {
+    state.level1Found[key] = true;
+    state.totalScore++;
+  } else if (state.currentLevel === 2) {
+    state.level2Found[key] = true;
+    state.totalScore++;
+  }
+
+  // Add visual found state
+  const hsMap = { screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' };
+  const el = document.getElementById(hsMap[key]);
+  if (el) el.classList.add('found');
+
+  updateNav();
+
+  // Show feedback modal
+  const fb = feedbackData[key];
+  document.getElementById('modal-title').textContent = fb.title;
+  document.getElementById('modal-body').textContent = fb.body;
+
+  // Check if level complete
+  const level1Done = state.currentLevel === 1 && Object.values(state.level1Found).every(Boolean);
+  const level2Done = state.currentLevel === 2 && Object.values(state.level2Found).every(Boolean);
+
+  if (level1Done) {
+    document.getElementById('modal-close-btn').textContent = '進入第二關 →';
+    document.getElementById('modal-close-btn').onclick = () => { closeModal(); transitionToLevel2(); };
+  } else if (level2Done) {
+    document.getElementById('modal-close-btn').textContent = '查看結果 🏆';
+    document.getElementById('modal-close-btn').onclick = () => { closeModal(); showResult(); };
+  } else {
+    document.getElementById('modal-close-btn').textContent = '了解！繼續找 →';
+    document.getElementById('modal-close-btn').onclick = closeModal;
+  }
+
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+function transitionToLevel2() {
+  state.currentLevel = 0;
+  showScreen('screen-transition');
+
+  setTimeout(() => {
+    state.currentLevel = 2;
+    showScreen('screen-level2');
+    updateNav();
+    lucide.createIcons();
+  }, 2500);
+}
+
+function showResult() {
+  if (state.timerInterval) clearInterval(state.timerInterval); // 只要進到結果頁，就停止計時
+  
+  state.currentLevel = 3;
+  showScreen('screen-result');
+
+  const config = (window.elementSdk && window.elementSdk.config) || defaultConfig;
+  const prizeFull = config.prize_full || defaultConfig.prize_full;
+  const prizePartial = config.prize_partial || defaultConfig.prize_partial;
+  const container = document.getElementById('result-content');
+  const perfect = state.totalScore === 6;
+
+  container.innerHTML = `
+    <div class="scene-enter">
+      <div class="text-6xl mb-4">${perfect ? '🏆' : '🛡️'}</div>
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4" style="background: ${perfect ? 'rgba(0,240,255,0.1)' : 'rgba(255,165,0,0.1)'}; border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'}; color: ${perfect ? 'var(--accent)' : '#ffa500'};">
+        得分：${state.totalScore} / 6
+      </div>
+      <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #fff; font-family: 'Orbitron', sans-serif;">
+        ${perfect ? '資安大師！' : '再接再厲！'}
+      </h2>
+      <p class="text-base mb-6" style="color: #8892b0; line-height: 1.7;">
+        ${perfect
+          ? '恭喜你找到了所有資安漏洞！你的警覺性非常優秀。'
+          : '雖然被駭了幾次，但至少你現在知道這些陷阱了！'}
+      </p>
+      <div class="rounded-xl p-4 mb-6" style="background: var(--surface); border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'};">
+        <p class="text-sm font-bold" style="color: ${perfect ? 'var(--accent)' : '#ffa500'};">
+          ${perfect ? '🎁 ' + prizeFull : '🎁 ' + prizePartial}
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mb-6 text-left">
+        ${generateScoreCard('screen', '螢幕未鎖', state.level1Found.screen)}
+        ${generateScoreCard('note', '密碼便條紙', state.level1Found.note)}
+        ${generateScoreCard('wifi', '不安全 Wi-Fi', state.level1Found.wifi)}
+        ${generateScoreCard('sender', '偽造發件人', state.level2Found.sender)}
+        ${generateScoreCard('subject', '情緒勒索文案', state.level2Found.subject)}
+        ${generateScoreCard('attachment', '惡意附件', state.level2Found.attachment)}
+      </div>
+      <button onclick="startGame()" class="px-8 py-3 rounded-lg font-bold text-sm" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'">
+        <span class="flex items-center gap-2 justify-center"><i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> 再玩一次</span>
+      </button>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function generateScoreCard(key, label, found) {
+  return `
+    <div class="flex items-center gap-2 rounded-lg px-3 py-2" style="background: ${found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)'}; border: 1px solid ${found ? 'rgba(0,240,255,0.2)' : 'rgba(255,45,107,0.2)'};">
+      <span>${found ? '✅' : '❌'}</span>
+      <span class="text-xs" style="color: ${found ? 'var(--accent)' : 'var(--accent2)'};">${label}</span>
+    </div>
+  `;
+}
+
+// Init
+lucide.createIcons();
+applyConfig(defaultConfig);
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e4c0b0a7586b2f8',t:'MTc3NDkyNTM5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
