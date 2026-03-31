@@ -340,13 +340,13 @@ const state = {
   level1Found: { screen: false, note: false, wifi: false },
   level2Found: { sender: false, subject: false, attachment: false },
   totalScore: 0,
-  timeLeft: 60,        // 新增：設定總時間 60 秒
-  timerInterval: null  // 新增：用來存放計時器的變數
-  isGameOver: false  // 👉 新增這行，用來阻止延遲動畫蓋台
+  timeLeft: 60,
+  timerInterval: null, // ✅ 這裡有正確加上逗號了
+  isGameOver: false    // ✅ 新增：用來阻止延遲動畫蓋台
 };
 
 const feedbackData = {
-antivirus: {
+  antivirus: {
     title: '這是偽裝的喔！',
     body: '駭客最喜歡在信中加入「安全掃描通過」的圖示，這會讓使用者放下戒心。這雖然不是直接的漏洞，但它是一個典型的陷阱信號。真正的威脅在附件！'
   },
@@ -420,7 +420,6 @@ function applyConfig(config) {
   const app = document.getElementById('app');
   if (app) app.style.background = `linear-gradient(170deg, ${bg} 0%, ${lighten(bg, 5)} 40%, ${lighten(bg, 10)} 100%)`;
 
-  // Text content
   const title = config.game_title || defaultConfig.game_title;
   const booth = config.booth_message || defaultConfig.booth_message;
   const startTitle = document.getElementById('start-title');
@@ -429,12 +428,6 @@ function applyConfig(config) {
   if (boothEl) boothEl.textContent = booth;
   const navTitle = document.getElementById('nav-title');
   if (navTitle) navTitle.textContent = booth;
-
-  // Font sizing
-  const baseSize = fontSize;
-  document.querySelectorAll('p, span:not([style*="font-family: Orbitron"]):not(.text-xs):not(.text-sm)').forEach(el => {
-    if (!el.closest('#modal-box') && !el.closest('#result-content')) return;
-  });
 }
 
 function lighten(hex, percent) {
@@ -445,7 +438,6 @@ function lighten(hex, percent) {
   return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
 }
 
-// SDK Init
 if (window.elementSdk) {
   window.elementSdk.init({
     defaultConfig,
@@ -477,14 +469,13 @@ if (window.elementSdk) {
   });
 }
 
-// Game Functions
 function showScreen(id) {
   ['screen-start', 'screen-level1', 'screen-transition', 'screen-level2', 'screen-result'].forEach(s => {
     const el = document.getElementById(s);
-    el.style.display = 'none';
+    if (el) el.style.display = 'none';
   });
   const target = document.getElementById(id);
-  target.style.display = 'flex';
+  if (target) target.style.display = 'flex';
 }
 
 function updateNav() {
@@ -516,34 +507,29 @@ function updateNav() {
 }
 
 function startGame() {
-  state.isGameOver = false; // 👉 新增這行
+  state.isGameOver = false; // ✅ 每次開始遊戲重置狀態
   state.currentLevel = 1;
   state.level1Found = { screen: false, note: false, wifi: false };
   state.level2Found = { sender: false, subject: false, attachment: false };
   state.totalScore = 0;
-  state.timeLeft = 60; // 每次重新開始都回到 60 秒
+  state.timeLeft = 60; 
 
-  // 防止重複啟動計時器
   if (state.timerInterval) clearInterval(state.timerInterval);
 
-  // 啟動倒數計時
   state.timerInterval = setInterval(() => {
     state.timeLeft--;
     
-    // 把剩餘時間顯示在原本的「進度」欄位
     const levelText = document.getElementById('level-indicator');
     if (levelText) {
       levelText.innerHTML = `剩餘時間：<span style="color:var(--accent2); font-family:Orbitron;">${state.timeLeft}s</span>`;
     }
 
-    // 時間到就結束遊戲
     if (state.timeLeft <= 0) {
       clearInterval(state.timerInterval);
       showResult(); 
     }
   }, 1000);
 
-  // 重置所有陷阱的樣式
   ['hs-screen', 'hs-note', 'hs-wifi', 'hs-sender', 'hs-subject', 'hs-attachment'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('found');
@@ -551,15 +537,13 @@ function startGame() {
 
   showScreen('screen-level1');
   updateNav();
-  lucide.createIcons();
+  if (window.lucide) lucide.createIcons(); // ✅ 增加網路防呆
 }
 
 function handleHotspot(key) {
-  // 1. 定義哪些是「干擾項」
   const isDistraction = ['antivirus', 'signature', 'stationery'].includes(key);
 
   if (!isDistraction) {
-    // 只有正確的漏洞才會執行加分邏輯
     if (state.currentLevel === 1 && state.level1Found[key]) return;
     if (state.currentLevel === 2 && state.level2Found[key]) return;
 
@@ -576,9 +560,8 @@ function handleHotspot(key) {
     updateNav();
   }
 
-  // 2. 顯示回饋視窗內容
   const fb = feedbackData[key];
-  if (!fb) return; // 安全檢查
+  if (!fb) return; 
   
   document.getElementById('modal-title').textContent = fb.title;
   document.getElementById('modal-body').textContent = fb.body;
@@ -586,12 +569,9 @@ function handleHotspot(key) {
   const modalOverlay = document.getElementById('modal-overlay');
   const closeBtn = document.getElementById('modal-close-btn');
 
-  // 3. 核心修正：動態判斷按鈕行為
-  // 先抓取當前關卡是否全部找齊
   const level1Done = Object.values(state.level1Found).every(Boolean);
   const level2Done = Object.values(state.level2Found).every(Boolean);
 
-  // 清除舊的點擊事件，避免干擾
   closeBtn.onclick = null; 
 
   if (state.currentLevel === 1 && level1Done) {
@@ -600,7 +580,6 @@ function handleHotspot(key) {
   } else if (state.currentLevel === 2 && level2Done) {
     closeBtn.textContent = '查看結果 🏆';
     closeBtn.onclick = () => { 
-      console.log("正在進入結算頁面..."); // 測試用
       closeModal(); 
       showResult(); 
     };
@@ -621,35 +600,33 @@ function transitionToLevel2() {
   showScreen('screen-transition');
 
   setTimeout(() => {
-    if (state.isGameOver) return; // 👉 新增這行：如果已經 Game Over，就不要再切換到第二關了
+    if (state.isGameOver) return; // ✅ 如果已經結束，阻擋蓋台！
 
     state.currentLevel = 2;
     showScreen('screen-level2');
     updateNav();
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
   }, 2500);
 }
 
 function showResult() {
-  state.isGameOver = true; // 👉 新增這行：宣告遊戲結束
-  closeModal();            // 👉 新增這行：強制關閉可能還開著的視窗
+  state.isGameOver = true; // ✅ 宣告遊戲結束
+  closeModal();            // ✅ 強制關閉可能還開著的視窗
 
   if (state.timerInterval) clearInterval(state.timerInterval); 
   
   state.currentLevel = 3;
   showScreen('screen-result');
 
-  // 確保拿到正確的獎勵文字
   const config = (window.elementSdk && window.elementSdk.config) || defaultConfig;
   const prizeFull = config.prize_full || "請向工作人員出示此畫面領取【抽獎資格】";
   const prizePartial = config.prize_partial || "請向工作人員領取【參加獎】";
   
   const container = document.getElementById('result-content');
-  if (!container) return; // 安全檢查
+  if (!container) return; 
 
   const perfect = state.totalScore === 6;
 
-  // 重新渲染結果頁面內容
   container.innerHTML = `
     <div class="scene-enter">
       <div class="text-6xl mb-4">${perfect ? '🏆' : '🛡️'}</div>
@@ -689,13 +666,11 @@ function showResult() {
     </div>
   `;
   
-  // 重新啟動圖示
   if (window.lucide) {
     lucide.createIcons();
   }
 }
 
-// 修正後的 generateScoreCard (簡化版，確保不報錯)
 function generateScoreCard(label, found) {
   const color = found ? 'var(--accent)' : 'var(--accent2)';
   const bgColor = found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)';
