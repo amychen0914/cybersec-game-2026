@@ -159,7 +159,7 @@
          找出所有資安漏洞，守護你的數位安全！</p>
       </div>
       <div class="flex flex-col items-center gap-3 mt-8">
-       <div class="flex items-center gap-4 text-sm" style="color: #5a6080;"><span class="flex items-center gap-1"><i data-lucide="layers" style="width:16px;height:16px;"></i> 2 關</span> <span class="flex items-center gap-1"><i data-lucide="target" style="width:16px;height:16px;"></i> 6 個陷阱</span> <span class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px;"></i> ~3 分鐘</span>
+       <div class="flex items-center gap-4 text-sm" style="color: #5a6080;"><span class="flex items-center gap-1"><i data-lucide="layers" style="width:16px;height:16px;"></i> 2 關</span> <span class="flex items-center gap-1"><i data-lucide="target" style="width:16px;height:16px;"></i> 6 個陷阱</span> <span class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px;"></i> ~1 分鐘</span>
        </div><button id="btn-start" onclick="startGame()" class="mt-4 px-10 py-4 rounded-lg font-bold text-base md:text-lg" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'"> <span class="flex items-center gap-2"> <i data-lucide="play" style="width:20px;height:20px;"></i> 開始挑戰 </span> </button>
       </div>
      </div>
@@ -168,8 +168,13 @@
      <div class="text-center mb-4 scene-enter">
       <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold" style="background: rgba(0,240,255,0.1); border: 1px solid rgba(0,240,255,0.3); color: var(--accent); font-family: 'Orbitron', sans-serif;"><i data-lucide="coffee" style="width:14px;height:14px;"></i> 第一關：咖啡廳隱形危機
       </div>
-      <p class="mt-3 text-sm mb-3" style="color: #8892b0; line-height: 1.6;">你正在家附近的咖啡廳享受遠端辦公的愜意，做好開工準備後，你起身走向櫃檯點餐。<br><span style="font-size: 0.9rem; color: #6a7090;">在這平靜的60秒內，你的設備正向駭客招手！</span></p>
-      <p class="text-xs" style="color: #6a7090;">點擊畫面中的資安漏洞！</p>
+      <p class="mt-3 text-sm mb-3" style="color: #8892b0; line-height: 1.6;">你正在家附近的咖啡廳遠端辦公，開好電腦後，你起身走向櫃檯點餐。<br><span style="font-size: 0.9rem; color: #6a7090;">在這60秒內，有幾個資安漏洞正向駭客招手！</span></p>
+<p class="guide-text text-base mb-3 font-bold" style="color: var(--accent); text-shadow: 0 0 10px var(--accent); animation: pulse-text 2s infinite;">
+  🔥 點擊畫面中的資安漏洞！(限時 60 秒) 🔥
+</p>
+<style>
+  @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
      </div><!-- Coffee Shop Scene -->
      <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden cyber-border scene-enter" style="background: var(--surface); position: relative;">
       <div class="scanline-overlay rounded-xl"></div><!-- Scene Illustration -->
@@ -293,8 +298,20 @@
         </div>
        </div>
        <div class="text-xs" style="color: #3a4570;">
-        此郵件由 Microsoft Security Team 自動發送，請勿回覆。
-       </div>
+<div class="space-y-3">
+          <div id="hs-antivirus" class="hotspot flex items-center gap-2 p-2 rounded bg-green-900/10 border border-transparent hover:border-green-500/30" onclick="handleHotspot('antivirus')">
+            <i data-lucide="shield-check" class="w-3 h-3 text-green-500"></i>
+            <span class="text-xs text-green-500">此郵件已通過 Windows Defender 安全掃描，未發現威脅。</span>
+          </div>
+
+          <div id="hs-signature" class="hotspot mt-4 pt-4 border-t border-gray-800 opacity-60 hover:opacity-100" onclick="handleHotspot('signature')">
+            <div class="text-[10px] text-gray-500 font-mono">
+              Microsoft Global Security Operations Center<br>
+              One Microsoft Way, Redmond, WA 98052, USA<br>
+              Reference ID: MS-992834-SEC
+            </div>
+          </div>
+        </div>
       </div>
      </div>
     </div><!-- RESULT SCREEN -->
@@ -328,6 +345,14 @@ const state = {
 };
 
 const feedbackData = {
+antivirus: {
+    title: '這是偽裝的喔！',
+    body: '駭客最喜歡在信中加入「安全掃描通過」的圖示，這會讓使用者放下戒心。這雖然不是直接的漏洞，但它是一個典型的陷阱信號。真正的威脅在附件！'
+  },
+  signature: {
+    title: '這裡很正常',
+    body: '雖然看起來很專業，但這只是普通的辦公地址資訊，並不是這封信最致命的問題。再仔細看看「發件人」的拼寫吧！'
+  },
   screen: {
     title: '中招了！',
     body: '離開座位不鎖螢幕（Win+L），路人甲 3 秒就能拷貝你的客戶資料。養成離席鎖屏的好習慣，這是基本的物理安全防護！'
@@ -528,44 +553,48 @@ function startGame() {
 }
 
 function handleHotspot(key) {
-  // Check if already found
-  if (state.currentLevel === 1 && state.level1Found[key]) return;
-  if (state.currentLevel === 2 && state.level2Found[key]) return;
+  // 定義哪些是「干擾項」（點了會跳窗，但不會加分，也不會變成紅色框）
+  const isDistraction = ['antivirus', 'signature', 'stationery'].includes(key);
 
-  // Mark found
-  if (state.currentLevel === 1) {
-    state.level1Found[key] = true;
+  if (!isDistraction) {
+    // 只有正確的漏洞才會執行以下加分邏輯
+    if (state.currentLevel === 1 && state.level1Found[key]) return;
+    if (state.currentLevel === 2 && state.level2Found[key]) return;
+
+    if (state.currentLevel === 1) state.level1Found[key] = true;
+    else if (state.currentLevel === 2) state.level2Found[key] = true;
+    
     state.totalScore++;
-  } else if (state.currentLevel === 2) {
-    state.level2Found[key] = true;
-    state.totalScore++;
+    const hsMap = { 
+      screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', 
+      sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' 
+    };
+    const el = document.getElementById(hsMap[key]);
+    if (el) el.classList.add('found');
+    updateNav();
   }
 
-  // Add visual found state
-  const hsMap = { screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' };
-  const el = document.getElementById(hsMap[key]);
-  if (el) el.classList.add('found');
-
-  updateNav();
-
-  // Show feedback modal
+  // 無論對錯都彈出視窗顯示回饋
   const fb = feedbackData[key];
   document.getElementById('modal-title').textContent = fb.title;
   document.getElementById('modal-body').textContent = fb.body;
-
-  // Check if level complete
+  
+  const closeBtn = document.getElementById('modal-close-btn');
+  
+  // 檢查是否過關
   const level1Done = state.currentLevel === 1 && Object.values(state.level1Found).every(Boolean);
   const level2Done = state.currentLevel === 2 && Object.values(state.level2Found).every(Boolean);
 
   if (level1Done) {
-    document.getElementById('modal-close-btn').textContent = '進入第二關 →';
-    document.getElementById('modal-close-btn').onclick = () => { closeModal(); transitionToLevel2(); };
+    closeBtn.textContent = '進入第二關 →';
+    closeBtn.onclick = () => { closeModal(); transitionToLevel2(); };
   } else if (level2Done) {
-    document.getElementById('modal-close-btn').textContent = '查看結果 🏆';
-    document.getElementById('modal-close-btn').onclick = () => { closeModal(); showResult(); };
+    closeBtn.textContent = '查看結果 🏆';
+    closeBtn.onclick = () => { closeModal(); showResult(); };
   } else {
-    document.getElementById('modal-close-btn').textContent = '了解！繼續找 →';
-    document.getElementById('modal-close-btn').onclick = closeModal;
+    // 如果是干擾項，按鈕文字稍微改一下
+    closeBtn.textContent = isDistraction ? '再找找看' : '了解！繼續找 →';
+    closeBtn.onclick = closeModal;
   }
 
   document.getElementById('modal-overlay').style.display = 'flex';
