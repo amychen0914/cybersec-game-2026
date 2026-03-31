@@ -342,6 +342,7 @@ const state = {
   totalScore: 0,
   timeLeft: 60,        // 新增：設定總時間 60 秒
   timerInterval: null  // 新增：用來存放計時器的變數
+  isGameOver: false  // 👉 新增這行，用來阻止延遲動畫蓋台
 };
 
 const feedbackData = {
@@ -515,6 +516,7 @@ function updateNav() {
 }
 
 function startGame() {
+  state.isGameOver = false; // 👉 新增這行
   state.currentLevel = 1;
   state.level1Found = { screen: false, note: false, wifi: false };
   state.level2Found = { sender: false, subject: false, attachment: false };
@@ -619,6 +621,8 @@ function transitionToLevel2() {
   showScreen('screen-transition');
 
   setTimeout(() => {
+    if (state.isGameOver) return; // 👉 新增這行：如果已經 Game Over，就不要再切換到第二關了
+
     state.currentLevel = 2;
     showScreen('screen-level2');
     updateNav();
@@ -627,6 +631,9 @@ function transitionToLevel2() {
 }
 
 function showResult() {
+  state.isGameOver = true; // 👉 新增這行：宣告遊戲結束
+  closeModal();            // 👉 新增這行：強制關閉可能還開著的視窗
+
   if (state.timerInterval) clearInterval(state.timerInterval); 
   
   state.currentLevel = 3;
