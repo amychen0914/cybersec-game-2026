@@ -159,7 +159,7 @@
          找出所有資安漏洞，守護你的數位安全！</p>
       </div>
       <div class="flex flex-col items-center gap-3 mt-8">
-       <div class="flex items-center gap-4 text-sm" style="color: #5a6080;"><span class="flex items-center gap-1"><i data-lucide="layers" style="width:16px;height:16px;"></i> 2 關</span> <span class="flex items-center gap-1"><i data-lucide="target" style="width:16px;height:16px;"></i> 6 個陷阱</span> <span class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px;"></i> ~1 分鐘</span>
+       <div class="flex items-center gap-4 text-sm" style="color: #5a6080;"><span class="flex items-center gap-1"><i data-lucide="layers" style="width:16px;height:16px;"></i> 2 關</span> <span class="flex items-center gap-1"><i data-lucide="target" style="width:16px;height:16px;"></i> 6 個陷阱</span> <span class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px;"></i> ~3 分鐘</span>
        </div><button id="btn-start" onclick="startGame()" class="mt-4 px-10 py-4 rounded-lg font-bold text-base md:text-lg" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'"> <span class="flex items-center gap-2"> <i data-lucide="play" style="width:20px;height:20px;"></i> 開始挑戰 </span> </button>
       </div>
      </div>
@@ -298,20 +298,8 @@
         </div>
        </div>
        <div class="text-xs" style="color: #3a4570;">
-<div class="space-y-3">
-          <div id="hs-antivirus" class="hotspot flex items-center gap-2 p-2 rounded bg-green-900/10 border border-transparent hover:border-green-500/30" onclick="handleHotspot('antivirus')">
-            <i data-lucide="shield-check" class="w-3 h-3 text-green-500"></i>
-            <span class="text-xs text-green-500">此郵件已通過 Windows Defender 安全掃描，未發現威脅。</span>
-          </div>
-
-          <div id="hs-signature" class="hotspot mt-4 pt-4 border-t border-gray-800 opacity-60 hover:opacity-100" onclick="handleHotspot('signature')">
-            <div class="text-[10px] text-gray-500 font-mono">
-              Microsoft Global Security Operations Center<br>
-              One Microsoft Way, Redmond, WA 98052, USA<br>
-              Reference ID: MS-992834-SEC
-            </div>
-          </div>
-        </div>
+        此郵件由 Microsoft Security Team 自動發送，請勿回覆。
+       </div>
       </div>
      </div>
     </div><!-- RESULT SCREEN -->
@@ -340,20 +328,11 @@ const state = {
   level1Found: { screen: false, note: false, wifi: false },
   level2Found: { sender: false, subject: false, attachment: false },
   totalScore: 0,
-  timeLeft: 60,
-  timerInterval: null, // ✅ 這裡有正確加上逗號了
-  isGameOver: false    // ✅ 新增：用來阻止延遲動畫蓋台
+  timeLeft: 60, // 增加這一行
+  timerInterval: null // 增加這一行
 };
 
 const feedbackData = {
-  antivirus: {
-    title: '這是偽裝的喔！',
-    body: '駭客最喜歡在信中加入「安全掃描通過」的圖示，這會讓使用者放下戒心。這雖然不是直接的漏洞，但它是一個典型的陷阱信號。真正的威脅在附件！'
-  },
-  signature: {
-    title: '這裡很正常',
-    body: '雖然看起來很專業，但這只是普通的辦公地址資訊，並不是這封信最致命的問題。再仔細看看「發件人」的拼寫吧！'
-  },
   screen: {
     title: '中招了！',
     body: '離開座位不鎖螢幕（Win+L），路人甲 3 秒就能拷貝你的客戶資料。養成離席鎖屏的好習慣，這是基本的物理安全防護！'
@@ -420,6 +399,7 @@ function applyConfig(config) {
   const app = document.getElementById('app');
   if (app) app.style.background = `linear-gradient(170deg, ${bg} 0%, ${lighten(bg, 5)} 40%, ${lighten(bg, 10)} 100%)`;
 
+  // Text content
   const title = config.game_title || defaultConfig.game_title;
   const booth = config.booth_message || defaultConfig.booth_message;
   const startTitle = document.getElementById('start-title');
@@ -428,6 +408,12 @@ function applyConfig(config) {
   if (boothEl) boothEl.textContent = booth;
   const navTitle = document.getElementById('nav-title');
   if (navTitle) navTitle.textContent = booth;
+
+  // Font sizing
+  const baseSize = fontSize;
+  document.querySelectorAll('p, span:not([style*="font-family: Orbitron"]):not(.text-xs):not(.text-sm)').forEach(el => {
+    if (!el.closest('#modal-box') && !el.closest('#result-content')) return;
+  });
 }
 
 function lighten(hex, percent) {
@@ -438,6 +424,7 @@ function lighten(hex, percent) {
   return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
 }
 
+// SDK Init
 if (window.elementSdk) {
   window.elementSdk.init({
     defaultConfig,
@@ -469,13 +456,14 @@ if (window.elementSdk) {
   });
 }
 
+// Game Functions
 function showScreen(id) {
   ['screen-start', 'screen-level1', 'screen-transition', 'screen-level2', 'screen-result'].forEach(s => {
     const el = document.getElementById(s);
-    if (el) el.style.display = 'none';
+    el.style.display = 'none';
   });
   const target = document.getElementById(id);
-  if (target) target.style.display = 'flex';
+  target.style.display = 'flex';
 }
 
 function updateNav() {
@@ -507,29 +495,30 @@ function updateNav() {
 }
 
 function startGame() {
-  state.isGameOver = false; // ✅ 每次開始遊戲重置狀態
   state.currentLevel = 1;
   state.level1Found = { screen: false, note: false, wifi: false };
   state.level2Found = { sender: false, subject: false, attachment: false };
   state.totalScore = 0;
-  state.timeLeft = 60; 
+  state.timeLeft = 60; // 重置時間
 
+  // 清除舊的計時器防止累加
   if (state.timerInterval) clearInterval(state.timerInterval);
 
+  // 啟動 60 秒倒數
   state.timerInterval = setInterval(() => {
     state.timeLeft--;
     
+    // 更新介面上的時間（建議在導覽列找個位置顯示）
     const levelText = document.getElementById('level-indicator');
-    if (levelText) {
-      levelText.innerHTML = `剩餘時間：<span style="color:var(--accent2); font-family:Orbitron;">${state.timeLeft}s</span>`;
-    }
+    levelText.innerHTML = `時間剩餘：<span style="color:var(--accent2)">${state.timeLeft}s</span>`;
 
     if (state.timeLeft <= 0) {
       clearInterval(state.timerInterval);
-      showResult(); 
+      showResult(); // 時間到，直接跳轉結果頁
     }
   }, 1000);
 
+  // 原有的重置樣式邏輯
   ['hs-screen', 'hs-note', 'hs-wifi', 'hs-sender', 'hs-subject', 'hs-attachment'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('found');
@@ -537,58 +526,51 @@ function startGame() {
 
   showScreen('screen-level1');
   updateNav();
-  if (window.lucide) lucide.createIcons(); // ✅ 增加網路防呆
+  lucide.createIcons();
 }
 
 function handleHotspot(key) {
-  const isDistraction = ['antivirus', 'signature', 'stationery'].includes(key);
+  // Check if already found
+  if (state.currentLevel === 1 && state.level1Found[key]) return;
+  if (state.currentLevel === 2 && state.level2Found[key]) return;
 
-  if (!isDistraction) {
-    if (state.currentLevel === 1 && state.level1Found[key]) return;
-    if (state.currentLevel === 2 && state.level2Found[key]) return;
-
-    if (state.currentLevel === 1) state.level1Found[key] = true;
-    else if (state.currentLevel === 2) state.level2Found[key] = true;
-    
+  // Mark found
+  if (state.currentLevel === 1) {
+    state.level1Found[key] = true;
     state.totalScore++;
-    const hsMap = { 
-      screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', 
-      sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' 
-    };
-    const el = document.getElementById(hsMap[key]);
-    if (el) el.classList.add('found');
-    updateNav();
+  } else if (state.currentLevel === 2) {
+    state.level2Found[key] = true;
+    state.totalScore++;
   }
 
+  // Add visual found state
+  const hsMap = { screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' };
+  const el = document.getElementById(hsMap[key]);
+  if (el) el.classList.add('found');
+
+  updateNav();
+
+  // Show feedback modal
   const fb = feedbackData[key];
-  if (!fb) return; 
-  
   document.getElementById('modal-title').textContent = fb.title;
   document.getElementById('modal-body').textContent = fb.body;
-  
-  const modalOverlay = document.getElementById('modal-overlay');
-  const closeBtn = document.getElementById('modal-close-btn');
 
-  const level1Done = Object.values(state.level1Found).every(Boolean);
-  const level2Done = Object.values(state.level2Found).every(Boolean);
+  // Check if level complete
+  const level1Done = state.currentLevel === 1 && Object.values(state.level1Found).every(Boolean);
+  const level2Done = state.currentLevel === 2 && Object.values(state.level2Found).every(Boolean);
 
-  closeBtn.onclick = null; 
-
-  if (state.currentLevel === 1 && level1Done) {
-    closeBtn.textContent = '進入第二關 →';
-    closeBtn.onclick = () => { closeModal(); transitionToLevel2(); };
-  } else if (state.currentLevel === 2 && level2Done) {
-    closeBtn.textContent = '查看結果 🏆';
-    closeBtn.onclick = () => { 
-      closeModal(); 
-      showResult(); 
-    };
+  if (level1Done) {
+    document.getElementById('modal-close-btn').textContent = '進入第二關 →';
+    document.getElementById('modal-close-btn').onclick = () => { closeModal(); transitionToLevel2(); };
+  } else if (level2Done) {
+    document.getElementById('modal-close-btn').textContent = '查看結果 🏆';
+    document.getElementById('modal-close-btn').onclick = () => { closeModal(); showResult(); };
   } else {
-    closeBtn.textContent = isDistraction ? '再找找看' : '了解！繼續找 →';
-    closeBtn.onclick = closeModal;
+    document.getElementById('modal-close-btn').textContent = '了解！繼續找 →';
+    document.getElementById('modal-close-btn').onclick = closeModal;
   }
 
-  modalOverlay.style.display = 'flex';
+  document.getElementById('modal-overlay').style.display = 'flex';
 }
 
 function closeModal() {
@@ -600,48 +582,36 @@ function transitionToLevel2() {
   showScreen('screen-transition');
 
   setTimeout(() => {
-    if (state.isGameOver) return; // ✅ 如果已經結束，阻擋蓋台！
-
     state.currentLevel = 2;
     showScreen('screen-level2');
     updateNav();
-    if (window.lucide) lucide.createIcons();
+    lucide.createIcons();
   }, 2500);
 }
 
 function showResult() {
-  state.isGameOver = true; // ✅ 宣告遊戲結束
-  closeModal();            // ✅ 強制關閉可能還開著的視窗
-
-  if (state.timerInterval) clearInterval(state.timerInterval); 
-  
+  if (state.timerInterval) clearInterval(state.timerInterval); // 停止計時
   state.currentLevel = 3;
   showScreen('screen-result');
 
   const config = (window.elementSdk && window.elementSdk.config) || defaultConfig;
-  const prizeFull = config.prize_full || "請向工作人員出示此畫面領取【抽獎資格】";
-  const prizePartial = config.prize_partial || "請向工作人員領取【參加獎】";
-  
+  const prizeFull = config.prize_full || defaultConfig.prize_full;
+  const prizePartial = config.prize_partial || defaultConfig.prize_partial;
   const container = document.getElementById('result-content');
-  if (!container) return; 
-
   const perfect = state.totalScore === 6;
 
   container.innerHTML = `
     <div class="scene-enter">
       <div class="text-6xl mb-4">${perfect ? '🏆' : '🛡️'}</div>
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4" 
-           style="background: ${perfect ? 'rgba(0,240,255,0.1)' : 'rgba(255,165,0,0.1)'}; 
-                  border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'}; 
-                  color: ${perfect ? 'var(--accent)' : '#ffa500'};">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4" style="background: ${perfect ? 'rgba(0,240,255,0.1)' : 'rgba(255,165,0,0.1)'}; border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'}; color: ${perfect ? 'var(--accent)' : '#ffa500'};">
         得分：${state.totalScore} / 6
       </div>
       <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #fff; font-family: 'Orbitron', sans-serif;">
         ${perfect ? '資安大師！' : '再接再厲！'}
       </h2>
       <p class="text-base mb-6" style="color: #8892b0; line-height: 1.7;">
-        ${perfect 
-          ? '恭喜你找到了所有資安漏洞！你的警覺性非常優秀。' 
+        ${perfect
+          ? '恭喜你找到了所有資安漏洞！你的警覺性非常優秀。'
           : '雖然被駭了幾次，但至少你現在知道這些陷阱了！'}
       </p>
       <div class="rounded-xl p-4 mb-6" style="background: var(--surface); border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'};">
@@ -649,45 +619,34 @@ function showResult() {
           ${perfect ? '🎁 ' + prizeFull : '🎁 ' + prizePartial}
         </p>
       </div>
-      
       <div class="grid grid-cols-2 gap-2 mb-6 text-left">
-        ${generateScoreCard('螢幕未鎖', state.level1Found.screen)}
-        ${generateScoreCard('密碼便條', state.level1Found.note)}
-        ${generateScoreCard('不安全WiFi', state.level1Found.wifi)}
-        ${generateScoreCard('發件人錯誤', state.level2Found.sender)}
-        ${generateScoreCard('情緒勒索', state.level2Found.subject)}
-        ${generateScoreCard('惡意附件', state.level2Found.attachment)}
+        ${generateScoreCard('screen', '螢幕未鎖', state.level1Found.screen)}
+        ${generateScoreCard('note', '密碼便條紙', state.level1Found.note)}
+        ${generateScoreCard('wifi', '不安全 Wi-Fi', state.level1Found.wifi)}
+        ${generateScoreCard('sender', '偽造發件人', state.level2Found.sender)}
+        ${generateScoreCard('subject', '情緒勒索文案', state.level2Found.subject)}
+        ${generateScoreCard('attachment', '惡意附件', state.level2Found.attachment)}
       </div>
-
-      <button onclick="startGame()" class="w-full px-8 py-3 rounded-lg font-bold text-sm" 
-              style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 20px rgba(0,240,255,0.3);">
+      <button onclick="startGame()" class="px-8 py-3 rounded-lg font-bold text-sm" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'">
         <span class="flex items-center gap-2 justify-center"><i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> 再玩一次</span>
       </button>
     </div>
   `;
-  
-  if (window.lucide) {
-    lucide.createIcons();
-  }
+  lucide.createIcons();
 }
 
-function generateScoreCard(label, found) {
-  const color = found ? 'var(--accent)' : 'var(--accent2)';
-  const bgColor = found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)';
-  const borderColor = found ? 'rgba(0,240,255,0.2)' : 'rgba(255,45,107,0.2)';
-  
+function generateScoreCard(key, label, found) {
   return `
-    <div class="flex items-center gap-2 rounded-lg px-2 py-2" 
-         style="background: ${bgColor}; border: 1px solid ${borderColor};">
-      <span style="font-size: 12px;">${found ? '✅' : '❌'}</span>
-      <span class="text-[10px] md:text-xs font-bold" style="color: ${color}; white-space: nowrap;">${label}</span>
+    <div class="flex items-center gap-2 rounded-lg px-3 py-2" style="background: ${found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)'}; border: 1px solid ${found ? 'rgba(0,240,255,0.2)' : 'rgba(255,45,107,0.2)'};">
+      <span>${found ? '✅' : '❌'}</span>
+      <span class="text-xs" style="color: ${found ? 'var(--accent)' : 'var(--accent2)'};">${label}</span>
     </div>
   `;
 }
 
 // Init
-if (window.lucide) lucide.createIcons();
-      // applyConfig(defaultConfig); // 如果這行報錯可以先註解掉
-    </script>
-  </body>
+lucide.createIcons();
+applyConfig(defaultConfig);
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e4c0b0a7586b2f8',t:'MTc3NDkyNTM5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
