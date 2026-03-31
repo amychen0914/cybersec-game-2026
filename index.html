@@ -627,29 +627,37 @@ function transitionToLevel2() {
 }
 
 function showResult() {
-  if (state.timerInterval) clearInterval(state.timerInterval); // 只要進到結果頁，就停止計時
+  if (state.timerInterval) clearInterval(state.timerInterval); 
   
   state.currentLevel = 3;
   showScreen('screen-result');
 
+  // 確保拿到正確的獎勵文字
   const config = (window.elementSdk && window.elementSdk.config) || defaultConfig;
-  const prizeFull = config.prize_full || defaultConfig.prize_full;
-  const prizePartial = config.prize_partial || defaultConfig.prize_partial;
+  const prizeFull = config.prize_full || "請向工作人員出示此畫面領取【抽獎資格】";
+  const prizePartial = config.prize_partial || "請向工作人員領取【參加獎】";
+  
   const container = document.getElementById('result-content');
+  if (!container) return; // 安全檢查
+
   const perfect = state.totalScore === 6;
 
+  // 重新渲染結果頁面內容
   container.innerHTML = `
     <div class="scene-enter">
       <div class="text-6xl mb-4">${perfect ? '🏆' : '🛡️'}</div>
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4" style="background: ${perfect ? 'rgba(0,240,255,0.1)' : 'rgba(255,165,0,0.1)'}; border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'}; color: ${perfect ? 'var(--accent)' : '#ffa500'};">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-4" 
+           style="background: ${perfect ? 'rgba(0,240,255,0.1)' : 'rgba(255,165,0,0.1)'}; 
+                  border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'}; 
+                  color: ${perfect ? 'var(--accent)' : '#ffa500'};">
         得分：${state.totalScore} / 6
       </div>
       <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #fff; font-family: 'Orbitron', sans-serif;">
         ${perfect ? '資安大師！' : '再接再厲！'}
       </h2>
       <p class="text-base mb-6" style="color: #8892b0; line-height: 1.7;">
-        ${perfect
-          ? '恭喜你找到了所有資安漏洞！你的警覺性非常優秀。'
+        ${perfect 
+          ? '恭喜你找到了所有資安漏洞！你的警覺性非常優秀。' 
           : '雖然被駭了幾次，但至少你現在知道這些陷阱了！'}
       </p>
       <div class="rounded-xl p-4 mb-6" style="background: var(--surface); border: 1px solid ${perfect ? 'rgba(0,240,255,0.3)' : 'rgba(255,165,0,0.3)'};">
@@ -657,27 +665,40 @@ function showResult() {
           ${perfect ? '🎁 ' + prizeFull : '🎁 ' + prizePartial}
         </p>
       </div>
+      
       <div class="grid grid-cols-2 gap-2 mb-6 text-left">
-        ${generateScoreCard('screen', '螢幕未鎖', state.level1Found.screen)}
-        ${generateScoreCard('note', '密碼便條紙', state.level1Found.note)}
-        ${generateScoreCard('wifi', '不安全 Wi-Fi', state.level1Found.wifi)}
-        ${generateScoreCard('sender', '偽造發件人', state.level2Found.sender)}
-        ${generateScoreCard('subject', '情緒勒索文案', state.level2Found.subject)}
-        ${generateScoreCard('attachment', '惡意附件', state.level2Found.attachment)}
+        ${generateScoreCard('螢幕未鎖', state.level1Found.screen)}
+        ${generateScoreCard('密碼便條', state.level1Found.note)}
+        ${generateScoreCard('不安全WiFi', state.level1Found.wifi)}
+        ${generateScoreCard('發件人錯誤', state.level2Found.sender)}
+        ${generateScoreCard('情緒勒索', state.level2Found.subject)}
+        ${generateScoreCard('惡意附件', state.level2Found.attachment)}
       </div>
-      <button onclick="startGame()" class="px-8 py-3 rounded-lg font-bold text-sm" style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 20px rgba(0,240,255,0.3); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 0 30px rgba(0,240,255,0.5)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,240,255,0.3)'">
+
+      <button onclick="startGame()" class="w-full px-8 py-3 rounded-lg font-bold text-sm" 
+              style="background: linear-gradient(135deg, var(--accent), #00c4ff); color: #0a0e1a; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 20px rgba(0,240,255,0.3);">
         <span class="flex items-center gap-2 justify-center"><i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> 再玩一次</span>
       </button>
     </div>
   `;
-  lucide.createIcons();
+  
+  // 重新啟動圖示
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 }
 
-function generateScoreCard(key, label, found) {
+// 修正後的 generateScoreCard (簡化版，確保不報錯)
+function generateScoreCard(label, found) {
+  const color = found ? 'var(--accent)' : 'var(--accent2)';
+  const bgColor = found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)';
+  const borderColor = found ? 'rgba(0,240,255,0.2)' : 'rgba(255,45,107,0.2)';
+  
   return `
-    <div class="flex items-center gap-2 rounded-lg px-3 py-2" style="background: ${found ? 'rgba(0,240,255,0.05)' : 'rgba(255,45,107,0.05)'}; border: 1px solid ${found ? 'rgba(0,240,255,0.2)' : 'rgba(255,45,107,0.2)'};">
-      <span>${found ? '✅' : '❌'}</span>
-      <span class="text-xs" style="color: ${found ? 'var(--accent)' : 'var(--accent2)'};">${label}</span>
+    <div class="flex items-center gap-2 rounded-lg px-2 py-2" 
+         style="background: ${bgColor}; border: 1px solid ${borderColor};">
+      <span style="font-size: 12px;">${found ? '✅' : '❌'}</span>
+      <span class="text-[10px] md:text-xs font-bold" style="color: ${color}; white-space: nowrap;">${label}</span>
     </div>
   `;
 }
