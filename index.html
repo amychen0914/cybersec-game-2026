@@ -553,11 +553,11 @@ function startGame() {
 }
 
 function handleHotspot(key) {
-  // 定義哪些是「干擾項」（點了會跳窗，但不會加分，也不會變成紅色框）
+  // 1. 定義哪些是「干擾項」
   const isDistraction = ['antivirus', 'signature', 'stationery'].includes(key);
 
   if (!isDistraction) {
-    // 只有正確的漏洞才會執行以下加分邏輯
+    // 只有正確的漏洞才會執行加分邏輯
     if (state.currentLevel === 1 && state.level1Found[key]) return;
     if (state.currentLevel === 2 && state.level2Found[key]) return;
 
@@ -574,30 +574,40 @@ function handleHotspot(key) {
     updateNav();
   }
 
-  // 無論對錯都彈出視窗顯示回饋
+  // 2. 顯示回饋視窗內容
   const fb = feedbackData[key];
+  if (!fb) return; // 安全檢查
+  
   document.getElementById('modal-title').textContent = fb.title;
   document.getElementById('modal-body').textContent = fb.body;
   
+  const modalOverlay = document.getElementById('modal-overlay');
   const closeBtn = document.getElementById('modal-close-btn');
-  
-  // 檢查是否過關
-  const level1Done = state.currentLevel === 1 && Object.values(state.level1Found).every(Boolean);
-  const level2Done = state.currentLevel === 2 && Object.values(state.level2Found).every(Boolean);
 
-  if (level1Done) {
+  // 3. 核心修正：動態判斷按鈕行為
+  // 先抓取當前關卡是否全部找齊
+  const level1Done = Object.values(state.level1Found).every(Boolean);
+  const level2Done = Object.values(state.level2Found).every(Boolean);
+
+  // 清除舊的點擊事件，避免干擾
+  closeBtn.onclick = null; 
+
+  if (state.currentLevel === 1 && level1Done) {
     closeBtn.textContent = '進入第二關 →';
     closeBtn.onclick = () => { closeModal(); transitionToLevel2(); };
-  } else if (level2Done) {
+  } else if (state.currentLevel === 2 && level2Done) {
     closeBtn.textContent = '查看結果 🏆';
-    closeBtn.onclick = () => { closeModal(); showResult(); };
+    closeBtn.onclick = () => { 
+      console.log("正在進入結算頁面..."); // 測試用
+      closeModal(); 
+      showResult(); 
+    };
   } else {
-    // 如果是干擾項，按鈕文字稍微改一下
     closeBtn.textContent = isDistraction ? '再找找看' : '了解！繼續找 →';
     closeBtn.onclick = closeModal;
   }
 
-  document.getElementById('modal-overlay').style.display = 'flex';
+  modalOverlay.style.display = 'flex';
 }
 
 function closeModal() {
