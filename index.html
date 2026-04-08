@@ -219,6 +219,9 @@
          </div>
         </div>
        </div><!-- Decorative stationery scattered -->
+       <div id="hs-coffee" class="hotspot absolute top-8 left-8 text-3xl cursor-pointer opacity-80 hover:opacity-100 transition-opacity" onclick="handleHotspot('coffee')">
+       ☕
+       </div>
        <div id="hs-stationery" class="hotspot absolute bottom-3 left-3 md:left-6 text-base opacity-70 cursor-pointer hover:opacity-100 transition-opacity" onclick="handleHotspot('stationery')">
         ✏️ 🖊️
        </div>
@@ -297,6 +300,13 @@
          </div>
         </div>
        </div>
+<div id="hs-signature" class="hotspot rounded p-2 mb-3" style="border-left: 2px solid #2a3050; opacity: 0.8; cursor: pointer;" onclick="handleHotspot('signature')">
+  <div class="text-xs" style="color: #5a6a90;">
+    --<br>
+    Microsoft Security Team<br>
+    One Microsoft Way, Redmond, WA 98052
+  </div>
+</div>
        <div class="text-xs" style="color: #3a4570;">
         此郵件由 Microsoft Security Team 自動發送，請勿回覆。
        </div>
@@ -334,7 +344,7 @@ const state = {
 
 const feedbackData = {
   screen: {
-    title: '中招了！',
+    title: '抓到了！',
     body: '離開座位不鎖螢幕（Win+L），路人甲 3 秒就能拷貝你的客戶資料。養成離席鎖屏的好習慣，這是基本的物理安全防護！'
   },
   note: {
@@ -345,6 +355,14 @@ const feedbackData = {
     title: '這裡沒問題喔',
     body: '文具很安全，再找找別的地方吧 🔍'
   },
+coffee: {
+    title: '只是一杯咖啡 ☕',
+    body: '喝太多咖啡可能會心悸，但這不是資安漏洞喔！繼續找找看。'
+  },
+  signature: {
+    title: '看起來很正常的簽名檔',
+    body: '釣魚信件經常會偽造官方簽名檔來降低你的戒心。這裡本身沒有惡意連結，所以不是這次的漏洞喔！'
+  },
   wifi: {
     title: '中間人攻擊風險！',
     body: '未加密的公共 Wi-Fi 容易被側錄封包，你的帳號密碼可能正在被監聽。請務必開啟 VPN！'
@@ -354,11 +372,11 @@ const feedbackData = {
     body: '注意到了嗎？micros"0"ft 用了數字 0 替代字母 o！官方網域拼寫錯誤是釣魚信最常見的馬腳。'
   },
   subject: {
-    title: '別被騙了！',
+    title: '找到了！',
     body: '創造迫切感是社交工程的經典套路。遇到「緊急」「立刻」「馬上」等字眼，請先深呼吸、冷靜查證。'
   },
   attachment: {
-    title: '絕對不要點！',
+    title: '就是這！',
     body: '系統更新不會透過電子郵件發送 .exe 執行檔。這種附件很可能是勒索軟體或木馬程式。'
   }
 };
@@ -530,34 +548,54 @@ function startGame() {
 }
 
 function handleHotspot(key) {
-  // Check if already found
+  // 1. 定義「真正的」資安漏洞清單
+  const realTargets = {
+    1: ['screen', 'note', 'wifi'],
+    2: ['sender', 'subject', 'attachment']
+  };
+
+  // 檢查目前點擊的是否為真實漏洞
+  const isRealTarget = realTargets[state.currentLevel] && realTargets[state.currentLevel].includes(key);
+
+  // 2. 如果點擊到「陷阱 (Decoy)」，只跳提示，不計分、不改變狀態
+  if (!isRealTarget) {
+    const fb = feedbackData[key] || { title: '這裡很安全！', body: '沒有發現資安漏洞，請繼續尋找！' };
+    document.getElementById('modal-title').textContent = fb.title;
+    document.getElementById('modal-body').textContent = fb.body;
+    document.getElementById('modal-close-btn').textContent = '了解！繼續找 →';
+    document.getElementById('modal-close-btn').onclick = closeModal;
+    document.getElementById('modal-overlay').style.display = 'flex';
+    return; // 提早結束，不執行後續的計分邏輯
+  }
+
+  // 3. 以下處理「真正的漏洞」
+  // 檢查是否已經點擊過
   if (state.currentLevel === 1 && state.level1Found[key]) return;
   if (state.currentLevel === 2 && state.level2Found[key]) return;
 
-  // Mark found
+  // 標記為已找到並增加分數
   if (state.currentLevel === 1) {
     state.level1Found[key] = true;
-    state.totalScore++;
   } else if (state.currentLevel === 2) {
     state.level2Found[key] = true;
-    state.totalScore++;
   }
+  state.totalScore++;
 
-  // Add visual found state
+  // 加上被找到的視覺效果
   const hsMap = { screen: 'hs-screen', note: 'hs-note', wifi: 'hs-wifi', sender: 'hs-sender', subject: 'hs-subject', attachment: 'hs-attachment' };
   const el = document.getElementById(hsMap[key]);
   if (el) el.classList.add('found');
 
   updateNav();
 
-  // Show feedback modal
+  // 顯示回饋彈窗
   const fb = feedbackData[key];
   document.getElementById('modal-title').textContent = fb.title;
   document.getElementById('modal-body').textContent = fb.body;
 
-  // Check if level complete
-  const level1Done = state.currentLevel === 1 && Object.values(state.level1Found).every(Boolean);
-  const level2Done = state.currentLevel === 2 && Object.values(state.level2Found).every(Boolean);
+  // 檢查是否已找齊該關卡所有漏洞
+  const level1Done = state.currentLevel === 1 && realTargets[1].every(k => state.level1Found[k]);
+  const level2Done = state.currentLevel === 2 && realTargets[2].every(k => state.level2Found[k]);
 
   if (level1Done) {
     document.getElementById('modal-close-btn').textContent = '進入第二關 →';
